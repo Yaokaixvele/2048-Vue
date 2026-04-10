@@ -1,5 +1,5 @@
 import { ref } from "vue"
-import { createEmptyGrid, deepCloneGrid, isGameOver, loadGameState, loadHighestScore, randomChoice, savedHighScore } from "../utils/game"
+import { createEmptyGrid, deepCloneGrid, isGameOver, loadGameState, loadHighestScore, randomChoice, savedHighScore, saveGameState } from "../utils/game"
 import type { AdvanceResult, Direction, GameState, Grid, Move, ShiftResult } from "../types/game"
 import { GRID_SIZE } from "../constants/game"
 
@@ -110,5 +110,45 @@ export const useGame = () => {
       state.value.highestScore = state.value.score;
       savedHighScore(state.value.highestScore);
     }
+    state.value.scoreAnimation = { points, key: Date.now() }
+    scoreAnimationClearTimer = setTimeout(() => {
+      state.value.scoreAnimation = undefined
+      scoreAnimationClearTimer = null
+    }, 1000)
+    saveGameState(state.value)
+    return {
+      moves,
+      points: state.value.score,
+      steps: state.value.steps
+    }
+  }
+  // 5. 初始化游戏
+  const initializeGame = () => {
+    if(scoreAnimationClearTimer){
+      clearTimeout(scoreAnimationClearTimer)
+      scoreAnimationClearTimer = null
+    }
+    const grid = createEmptyGrid()
+    generateNewBlock(grid)
+    generateNewBlock(grid)
+    Object.assign(state,{
+      grid,
+      score: 0,
+      steps: 0,
+      gameOver: false,
+      isAnimating: false,
+      moves: [],
+      scoreAnimationClearTimer: undefined
+    })
+    saveGameState(state.value)
+  }
+  const setAnimating = (isAnimating: boolean) => {
+    state.value.isAnimating = isAnimating
+  }
+  return {
+    state,
+    advance,
+    initializeGame,
+    setAnimating,
   }
 }
