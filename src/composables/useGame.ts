@@ -51,7 +51,7 @@ export const useGame = () => {
       incr = -1
     }
     const moves: [number,number][] = []
-    while(tail > 0 && tail < rowArr.length){
+    while(tail >= 0 && tail < rowArr.length){
       if(rowArr[tail] === null){
         tail += incr
       }else{
@@ -131,7 +131,7 @@ export const useGame = () => {
     const grid = createEmptyGrid()
     generateNewBlock(grid)
     generateNewBlock(grid)
-    Object.assign(state,{
+    Object.assign(state.value,{
       grid,
       score: 0,
       steps: 0,

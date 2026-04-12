@@ -54,19 +54,20 @@ const layout = computed(() => {
   }
   return { blockWidth: BLOCK_WIDTH, canvasSize: CANVAS_SIZE, spacing: BLOCK_SPACING }
 })
-// 模块 6：核心动画监听（你之前问的那段）
-watch(() => [props.isAnimating, props.moves], ([newIsAnimating]) => {
+// 模块 6：核心动画监听
+watch(() => props.isAnimating, (newIsAnimating) => {
   if(newIsAnimating && props.moves.length > 0){
     const newBlocks: AnimatedBlock[] = []
     props.moves.forEach(([[fromRow, fromCol], [toRow, toCol]]) => {
-      if(fromRow >= 0 && fromRow < 4 && fromCol >= 0 && fromCol < 4){
-        const value = props.grid[toRow][toCol]
-        if(!value){
-          const isMerged = fromRow >= 0 && fromRow < 4 && fromCol >= 0 && fromCol < 4 &&
-                          props.grid[fromRow][fromCol] !== value
-          const isNew = fromRow === toRow && fromCol === toCol
-          newBlocks.push({ value: value as number, fromRow, fromCol, toRow, toCol, isMerged, isNew})
-        }
+      // 从原始位置获取方块值
+      const value = props.grid[fromRow][fromCol]
+      if(value !== null && value !== undefined){
+        // 判断是否是合并（from位置和to位置不同，但不是新方块）
+        const isMerged = (fromRow !== toRow || fromCol !== toCol) && 
+                        props.grid[toRow][toCol] === value * 2
+        // 判断是否是新方块（from和to位置相同）
+        const isNew = fromRow === toRow && fromCol === toCol
+        newBlocks.push({ value, fromRow, fromCol, toRow, toCol, isMerged, isNew})
       }
     })
     animatedBlocks.value = newBlocks
@@ -74,10 +75,10 @@ watch(() => [props.isAnimating, props.moves], ([newIsAnimating]) => {
       animatedBlocks.value = []
       emit('animationEnd')
     }, ANIMATION_TIME)
-  }else if(!newIsAnimating) {
+  } else if(!newIsAnimating) {
     animatedBlocks.value = []
   }
-}, {deep: true})
+})
 // 模块 7：工具函数（位置、颜色）
 const getPos = (row: number, col: number) => ({
   top: `${row * (layout.value.blockWidth + BLOCK_GRP) + layout.value.spacing}px`,

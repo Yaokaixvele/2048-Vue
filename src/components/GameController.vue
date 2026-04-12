@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useGame } from '../composables/useGame';
 import type { Direction } from '../types/game';
+import GameGrid from './GameGrid.vue';
 
 const { state: gameState, advance, initializeGame, setAnimating } = useGame()
 const swiperAreaRef = ref<HTMLElement | null>(null)
@@ -59,11 +60,174 @@ onUnmounted(() => {
     swiperAreaRef.value.removeEventListener('touchstart', handleTouchStart)
   }
 })
+const handleRestart = () => initializeGame();
 </script>
 <template>
+  <div class="game-container">
+    <header class="game-header">
+      <h2>Vue 3 2048 Game</h2>
+    </header>
 
+    <div class="game-menu">
+      <div class="menu-grid">
+        <div class="stat-box">
+          <span class="label">分数</span>
+          <div class="score-wrapper">
+            <strong>{{ gameState.score }}</strong>
+            <Transition name="score-pop">
+              <span 
+                v-if="gameState.scoreAnimation" 
+                :key="gameState.scoreAnimation.key" 
+                class="score-plus"
+              >
+                +{{ gameState.scoreAnimation.points }}
+              </span>
+            </Transition>
+          </div>
+        </div>
+        
+        <div class="stat-box">
+          <span class="label">最高分</span>
+          <strong>{{ gameState.highestScore }}</strong>
+        </div>
+        
+        <div class="stat-box">
+          <span class="label">步数</span>
+          <strong>{{ gameState.steps }}</strong>
+        </div>
 
+        <div class="btn action-btn" @click="handleRestart">
+          <strong>再来一局</strong>
+        </div>
+
+        <!-- <div class="btn ai-btn" :class="{ 'ai-running': isAIRunning }" @click="handleAIClick">
+          <strong>{{ isAIRunning ? '停止 AI' : 'AI 走 10 步' }}</strong>
+          <small v-if="lastDecision" class="ai-hint">
+            {{ lastDecision.move }} (≈{{ lastDecision.projectedScore }})
+          </small>
+        </div> -->
+      </div>
+    </div>
+
+    <div ref="swiperAreaRef" class="grid-container">
+      <GameGrid
+        :grid="gameState.grid"
+        :moves="gameState.moves"
+        :isAnimating="gameState.isAnimating"
+        @animation-end="setAnimating(false)"
+      />
+    </div>
+
+    <footer class="game-info">
+      <p><strong>游戏方法：</strong>使用上下左右箭头或滑动屏幕进行移动</p>
+      <p>当相同的两个数字碰撞时，它们会合并成一个！</p>
+    </footer>
+
+    <Transition name="fade">
+      <div v-if="gameState.gameOver" class="game-over-overlay">
+        <div class="over-content">
+          <h2>游戏结束！</h2>
+          <p>最终得分: <span>{{ gameState.score }}</span></p>
+          <button class="restart-button" @click="handleRestart">重新开始</button>
+        </div>
+      </div>
+    </Transition>
+  </div>
 </template>
-<style lang="scss" scoped>
 
+<style scoped>
+.game-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 20px;
+  font-family: 'Oswald', sans-serif;
+  color: #776e65;
+}
+
+.game-header h2 {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* 布局美化 */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat-box, .btn {
+  background: #a78d74;
+  color: white;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 5px 5px 3px gray;
+  min-height: 60px;
+}
+
+.label { font-size: 14px; opacity: 0.9; }
+
+.btn { 
+  cursor: pointer; 
+  transition: all 0.2s; 
+}
+.btn:hover { background: #bba188; transform: translateY(-2px); }
+.ai-running { background: #8f7a66; }
+
+.score-wrapper { position: relative; display: inline-block; }
+
+.score-plus {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -25px;
+  color: #f65e3b;
+  font-weight: bold;
+  font-size: 24px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+  white-space: nowrap;
+}
+
+/* 核心动画：分数冒出 */
+.score-pop-enter-active { animation: pop-up 1s ease-out; }
+@keyframes pop-up {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(1); }
+  30% { opacity: 1; transform: translate(-50%, -30px) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -50px) scale(0.8); }
+}
+
+/* 游戏结束蒙层 */
+.game-over-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.over-content { text-align: center; }
+
+.restart-button {
+  margin-top: 20px;
+  padding: 10px 30px;
+  background: #8f7a66;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-family: inherit;
+}
+
+/* 过渡效果 */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
